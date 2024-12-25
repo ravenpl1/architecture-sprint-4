@@ -1,0 +1,29 @@
+﻿@startuml
+actor Оператор
+participant MES
+participant "MES API" as MESAPI
+participant "Redis" as Cache
+participant "MES DB" as MESDB
+
+Оператор -> MES : Запрос на чтение списка заказов
+MES -> Cache : Проверка кеша
+alt Кеш-попадание
+    Cache -> MES : Данные из кеша
+else Кеш-промах
+    MES -> MESAPI : Запрос данных из БД
+    MESAPI -> MESDB : Запрос данных
+    MESDB -> MESAPI : Данные из БД
+    MESAPI -> MES : Данные
+    MES -> Cache : Запись данных в кеш
+end
+MES -> Оператор : Список заказов
+
+Оператор -> MES : Изменение статуса заказа
+MES -> MESAPI : Изменение статуса заказа
+MESAPI -> Cache : Изменение статуса заказа
+Cache -> MESDB : Обновление статуса заказа (синхронно)
+MESDB -> MESAPI : Подтверждение изменения статуса заказа
+MESAPI -> MES : Подтверждение изменения статуса заказа
+MES -> Оператор : Статус заказа обновлен
+
+@enduml
